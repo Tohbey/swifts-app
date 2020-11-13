@@ -1,27 +1,25 @@
 const express = require('express')
 const router = express.Router()
-const chalk = require('chalk');
 const bcrypt = require('bcrypt');
-const monogoose = require('mongoose')
 const User = require('../models/user')
 const _ = require('lodash');
 const winston = require('winston');
 const { Post } = require('../models/post');
+const validateObjectId = require('../middleware/validateObjectId')
 
 //api-end Points
 //  1. /users               get,post,delete,put
 //  2. /users/post/:id      post,get
 
-//users
+//admin
 router.get('',async(req,res) => {
     const users = await User.find();
     res.status(200).json(users)
 })
 
-router.get('/:id',async(req,res) => {
+//users
+router.get('/:id',[validateObjectId],async(req,res) => {
     const id = req.params.id;
-    let isValid = monogoose.Types.ObjectId.isValid(id);
-    if(!isValid) return res.status(400).send('Invalid Id')
 
     let user = await User.findById(id);
     if(!user) return res.status(400).send('User doesnt not exist')
@@ -40,7 +38,7 @@ router.post('',async(req,res) => {
 
     user = new User(_.pick(req.body,[
         'surname','othernames','email','password',
-        'address','phoneNumber','bio','username'
+        'address','phoneNumber','bio','username','role'
     ]))
 
     user.password = await bcrypt.hash(user.password,salt);
@@ -49,17 +47,16 @@ router.post('',async(req,res) => {
         user = await user.save()
         winston.info('User saved')
         
-        res.status(200).send(_.pick(user,['username','email']))
+        const token = user.generateAuthToken()
+        res.header('x-auth-token',token).send(_.pick(user,['username','email']))
     }catch(err){
         res.status(400).send(err.errors)
         console.log("Saving users in users.js "+err.errors)
     }  
 })
 
-router.delete('/:id',async(req,res) => {
+router.delete('/:id',[validateObjectId],async(req,res) => {
     const id = req.params.id;
-    let isValid = monogoose.Types.ObjectId.isValid(id);
-    if(!isValid) return res.status(400).send('Invalid Id')
 
     let user = await User.findByIdAndDelete(id);
     if(!user) return res.status(400).send('User doesnt not exist')
@@ -72,11 +69,8 @@ router.delete('/:id',async(req,res) => {
     res.status(200).send("User with has been deleted")
 })
 
-router.put('/:id',async(req,res) => {
+router.put('/:id',[validateObjectId],async(req,res) => {
     const id = req.params.id;
-    let isValid = monogoose.Types.ObjectId.isValid(id);
-    if(!isValid) return res.status(400).send('Invalid Id')
-
     let user = await User.findById(id);
     if(!user) return res.status(400).send('User doesnt not exist')
 
@@ -94,11 +88,8 @@ router.put('/:id',async(req,res) => {
 })
 
 //users/post
-router.get('/post/:id',async(req,res) => {
+router.get('/post/:id',[validateObjectId],async(req,res) => {
     const id = req.params.id;
-    let isValid = monogoose.Types.ObjectId.isValid(id);
-    if(!isValid) return res.status(400).send('Invalid Id')
-    
     let user = await User.findById(id);
     if(!user) return res.status(400).send('User doesnt not exist')
     
@@ -107,11 +98,8 @@ router.get('/post/:id',async(req,res) => {
     res.send(posts)
 })
 
-router.post('/post/:id',async(req,res) => {
-    const id = req.params.id;
-    let isValid = monogoose.Types.ObjectId.isValid(id);
-    if(!isValid) return res.status(400).send('Invalid Id')
-    
+router.post('/post/:id',[validateObjectId],async(req,res) => {
+    const id = req.params.id;    
     let user = await User.findById(id);
     if(!user) return res.status(400).send('User doesnt not exist')
     
@@ -134,6 +122,10 @@ router.post('/post/:id',async(req,res) => {
         console.log("Sending post in users.js "+err.errors)
     }
 
+})
+
+router.delete('/post/:id/:userId',[validateObjectId],async(req,res) => {
+    
 })
 
 module.exports = router

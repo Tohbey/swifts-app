@@ -1,5 +1,5 @@
 const mongoose = require('mongoose')
-const {postSchema} = require('./post');
+const {postSchema, Post} = require('./post');
 const jwt = require('jsonwebtoken')
 require('dotenv').config();
 
@@ -55,12 +55,17 @@ const userSchema = new mongoose.Schema({
         maxlength:500,
         minlength:10,
     },
+    role:{
+        type:String,
+        enum:['Admin','User'],
+        required:true
+    },
     posts:[postSchema]
 });
 
 userSchema.methods.generateAuthToken = function(){
     const token = jwt.sign(
-            {_id:this._id,email:this.email,phoneNumber:this.phoneNumber},
+            {_id:this._id,email:this.email,role:this.role},
             jwtSecret
         )
     return token;
