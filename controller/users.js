@@ -6,6 +6,9 @@ const _ = require('lodash');
 const winston = require('winston');
 const { Post } = require('../models/post');
 const validateObjectId = require('../middleware/validateObjectId')
+const user = require('../middleware/user')
+const authorization = require('../middleware/auth')
+const admin = require('../middleware/admin')
 
 //api-end Points
 //  1. /users               get,post,delete,put
@@ -18,7 +21,7 @@ router.get('',async(req,res) => {
 })
 
 //users
-router.get('/:id',[validateObjectId],async(req,res) => {
+router.get('/:id',[validateObjectId,authorization,user],async(req,res) => {
     const id = req.params.id;
 
     let user = await User.findById(id);
@@ -55,7 +58,7 @@ router.post('',async(req,res) => {
     }  
 })
 
-router.delete('/:id',[validateObjectId],async(req,res) => {
+router.delete('/:id',[validateObjectId,authorization,user],async(req,res) => {
     const id = req.params.id;
 
     let user = await User.findByIdAndDelete(id);
@@ -69,7 +72,7 @@ router.delete('/:id',[validateObjectId],async(req,res) => {
     res.status(200).send("User with has been deleted")
 })
 
-router.put('/:id',[validateObjectId],async(req,res) => {
+router.put('/:id',[validateObjectId,authorization,user],async(req,res) => {
     const id = req.params.id;
     let user = await User.findById(id);
     if(!user) return res.status(400).send('User doesnt not exist')
@@ -88,7 +91,7 @@ router.put('/:id',[validateObjectId],async(req,res) => {
 })
 
 //users/post
-router.get('/post/:id',[validateObjectId],async(req,res) => {
+router.get('/post/:id',[validateObjectId,authorization,user],async(req,res) => {
     const id = req.params.id;
     let user = await User.findById(id);
     if(!user) return res.status(400).send('User doesnt not exist')
@@ -98,7 +101,7 @@ router.get('/post/:id',[validateObjectId],async(req,res) => {
     res.send(posts)
 })
 
-router.post('/post/:id',[validateObjectId],async(req,res) => {
+router.post('/post/:id',[validateObjectId,authorization,user],async(req,res) => {
     const id = req.params.id;    
     let user = await User.findById(id);
     if(!user) return res.status(400).send('User doesnt not exist')
@@ -124,8 +127,22 @@ router.post('/post/:id',[validateObjectId],async(req,res) => {
 
 })
 
-router.delete('/post/:id/:userId',[validateObjectId],async(req,res) => {
+router.delete('/post/:id/:userId',[validateObjectId,authorization,user],async(req,res) => {
+    const postId = req.params.id;
+
+    const userId = req.params.userId;
+    let user = await User.findById(userId);
+    if(!user) return res.status(400).send('User doesnt not exist')
+
+    let posts = user.posts;
+    console.log('Old posts ', posts)
+    let newPosts = posts.filter(x => String(x._id) != String(postId))
+    console.log('new Posts: ',newPosts)
     
+    user = await User.findByIdAndUpdate(user._id,{posts:newPosts})
+    await Post.findByIdAndDelete(postId)
+
+    res.status(200).send(user)
 })
 
 module.exports = router

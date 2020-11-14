@@ -4,6 +4,8 @@ const router = express.Router();
 const {Post} = require('../models/post');
 const validateObjectId = require('../middleware/validateObjectId');
 const User = require('../models/user');
+const user = require('../middleware/user')
+const authorization = require('../middleware/auth')
 
 
 //apis
@@ -24,7 +26,7 @@ router.get('/:id',[validateObjectId],async(req,res) => {
     res.send(post);
 })
 
-router.get('/:id/likes/:userId',[validateObjectId],async(req,res) => {
+router.get('/:id/likes/:userId',[validateObjectId,authorization,user],async(req,res) => {
     const userId = req.params.userId
 
     const id = req.params.id
@@ -39,7 +41,8 @@ router.get('/:id/likes/:userId',[validateObjectId],async(req,res) => {
     console.log('liked by users',likes)
     const Likeindex = likes.findIndex(x => String(x._id) === String(userId))
     console.log('user index in Likes array',Likeindex)
-    if(Likeindex >= 0) return res.status(400).send('You have liked this post before')
+    likes.splice(Likeindex,1)
+    if(Likeindex >= 0) return res.status(200).send('You have unliked this post before')
     
     post.likes.push(userId);
     post.numberOfLikes = post.likes.length;
@@ -60,7 +63,7 @@ router.get('/:id/likes/:userId',[validateObjectId],async(req,res) => {
     res.send(post)
 })
 
-router.get('/:id/comments/:userId',[validateObjectId],async(req,res) => {
+router.get('/:id/comments/:userId',[validateObjectId,authorization,user],async(req,res) => {
     
     const userId = req.params.userId
 
