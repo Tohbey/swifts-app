@@ -5,7 +5,8 @@ const {Post} = require('../models/post');
 const validateObjectId = require('../middleware/validateObjectId');
 const User = require('../models/user');
 const user = require('../middleware/user')
-const authorization = require('../middleware/auth')
+const authorization = require('../middleware/auth');
+const validateObjectUserId = require('../middleware/validateObjectUserId');
 
 
 //apis
@@ -26,7 +27,7 @@ router.get('/:id',[validateObjectId],async(req,res) => {
     res.send(post);
 })
 
-router.get('/:id/likes/:userId',[validateObjectId,authorization,user],async(req,res) => {
+router.get('/:id/likes/:userId',[validateObjectId,validateObjectUserId,authorization,user],async(req,res) => {
     const userId = req.params.userId
 
     const id = req.params.id
@@ -63,7 +64,7 @@ router.get('/:id/likes/:userId',[validateObjectId,authorization,user],async(req,
     res.send(post)
 })
 
-router.get('/:id/comments/:userId',[validateObjectId,authorization,user],async(req,res) => {
+router.get('/:id/comments/:userId',[validateObjectId,validateObjectUserId,authorization,user],async(req,res) => {
     
     const userId = req.params.userId
 

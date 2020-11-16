@@ -6,6 +6,7 @@ const _ = require('lodash');
 const winston = require('winston');
 const { Post } = require('../models/post');
 const validateObjectId = require('../middleware/validateObjectId')
+const validateObjectUserId = require('../middleware/validateObjectUserId')
 const user = require('../middleware/user')
 const authorization = require('../middleware/auth')
 const admin = require('../middleware/admin')
@@ -127,7 +128,7 @@ router.post('/post/:id',[validateObjectId,authorization,user],async(req,res) => 
 
 })
 
-router.delete('/post/:id/:userId',[validateObjectId,authorization,user],async(req,res) => {
+router.delete('/post/:id/:userId',[validateObjectId,validateObjectUserId,authorization,user],async(req,res) => {
     const postId = req.params.id;
 
     const userId = req.params.userId;
@@ -145,4 +146,58 @@ router.delete('/post/:id/:userId',[validateObjectId,authorization,user],async(re
     res.status(200).send(user)
 })
 
+
+//user/followers
+router.get('/:id/followers',[validateObjectId],async(req,res) => {
+    const id = req.params.id;
+    let user = await User.findById(id);
+    if(!user) return res.status(400).send('User doesnt not exist')
+    
+    let followers = user.followers;
+    console.log('followers - ',followers)
+
+    res.status(200).send(followers)
+})
+
+//user/following
+router.get('/:id/following',[validateObjectId],async(req,res) => {
+    const id = req.params.id;
+    let user = await User.findById(id);
+    if(!user) return res.status(400).send('User doesnt not exist')
+    
+    let following = user.following;
+    console.log('followering - ',following)
+
+    res.status(200).send(following)
+})
+
+
+//user/follow
+router.get('/:id/follow/:userId',[validateObjectId,validateObjectUserId],async(req,res) => {
+    const id = req.params.id;
+    let userFollowing = await User.findById(id);
+    if(!userFollowing) return res.status(400).send('User doesnt not exist')
+    
+    const userId = req.params.userId;
+    let userFollower = await User.findById(userId);
+    if(!userFollower) return res.status(400).send('User doesnt not exist')
+
+    let following = userFollowing.following
+    let index = following.findIndex((x) => String(x.id) === String(userId))
+    if(index >= 0) return res.status(400).send('you are already following him')
+
+    followers = userFollower.followers
+    followers.push(id)
+    console.log('Followers - ',followers)
+    console.log('user follower', userFollower)
+    userfollower = await User.findByIdAndUpdate(userId,{followers:followers})
+
+
+    following.push(userId)
+    console.log('following - ',following)
+    console.log('user follower', userFollowing)
+    userFollowing = await User.findByIdAndUpdate(userId,{following:following})
+
+    res.status(200).send('You have followed ',userFollowing.username)
+})
 module.exports = router

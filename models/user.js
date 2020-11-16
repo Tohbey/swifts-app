@@ -60,7 +60,21 @@ const userSchema = new mongoose.Schema({
         enum:['Admin','User'],
         required:true
     },
-    posts:[postSchema]
+    followers:[
+        {
+            followerId:{
+                type:mongoose.Types.ObjectId
+            }
+        }
+    ],
+    following:[
+        {
+            followingId:{
+                type:mongoose.Types.ObjectId
+            }
+        }
+    ],
+    posts:[postSchema]  
 });
 
 userSchema.methods.generateAuthToken = function(){
