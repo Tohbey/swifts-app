@@ -39,18 +39,21 @@ router.get('/:id/likes/:userId',[validateObjectId,validateObjectUserId],async(re
     if(!likeByUser) return res.status(400).send('user doesnt exist')
     
     // check if user has liked the post before
-    // let likes = post.likes
-    // console.log('liked by users',likes)
-    // const Likeindex = likes.findIndex(x => String(x._id) === String(userId))
-    // console.log('user index in Likes array',Likeindex)
-    // if(Likeindex >= 0) return res.status(200).send('You have unliked this post before')
+    let likes = post.likes
+    console.log('liked by users',likes)
+    const Likeindex = likes.findIndex(x => String(x._id) === String(userId))
+    console.log('user index in Likes array',Likeindex)
+    likes.splice(Likeindex,1)
+    if(Likeindex >= 0) return res.status(200).send('You have unliked this post before')
 
-    let like = ({
+    let like = new Likes({
         userId:userId,
         source:'post',
         sourceId:id,
-        reaction:req.params.reaction
+        reaction:req.body.reaction
     })
+    console.log(like)
+    await like.save()
     post.likes.push(like);
 
     post.numberOfLikes = post.likes.length;
@@ -65,10 +68,10 @@ router.get('/:id/likes/:userId',[validateObjectId,validateObjectUserId],async(re
     console.log('Post index in the users post array',index)
     posts[index].set(post)
     console.log(posts)
-    // await User.findByIdAndUpdate(user._id,{posts:posts})
+    await User.findByIdAndUpdate(user._id,{posts:posts})
     
-    // await post.save()
-    // res.send(post)
+    await post.save()
+    res.send(post)
 })
 
 router.get('/:id/comments/:userId',[validateObjectId,validateObjectUserId],async(req,res) => {
@@ -82,12 +85,14 @@ router.get('/:id/comments/:userId',[validateObjectId,validateObjectUserId],async
     let likeByUser = User.findById(userId)
     if(!likeByUser) return res.status(400).send('user doesnt exist')
 
-    let comment = ({
+    let comment = new Comment({
         body:req.body.body,
         postId:id,
         userId:userId,
     })
+    
     console.log('Updated post ',comment)
+    await comment.save()
 
     post.comments.push(comment);
     post.numberOfComments = post.comments.length;
@@ -101,10 +106,10 @@ router.get('/:id/comments/:userId',[validateObjectId,validateObjectUserId],async
     console.log('Post index in the users post array',index)
     posts[index].set(post)
     console.log(posts)
-    // await User.findByIdAndUpdate(user._id,{posts:posts})
+    await User.findByIdAndUpdate(user._id,{posts:posts})
     
-    // await post.save()
-    // res.send(post)
+    await post.save()
+    res.send(post)
 })
 
 module.exports = router
