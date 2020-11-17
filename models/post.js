@@ -1,9 +1,19 @@
 const moongoes = require('mongoose')
+const {commentSchema} = require('./comments')
+const {likesSchema} = require('./likes')
+const objectId = moongoes.Types.ObjectId;
+
 
 const postSchema = new moongoes.Schema({
     userId:{
-        type:moongoes.Types.ObjectId,
+        type:objectId,
         required:true
+    },
+    title:{
+        type:String,
+        required:true,
+        maxlength:1024,
+        minlength:5
     },
     message:{
         type:String,
@@ -15,29 +25,17 @@ const postSchema = new moongoes.Schema({
         type:Number,
         min:0,
     },
+    tags:[{
+        type:String
+    }],
     numberOfComments:{
         type:Number,
         min:0,
     },
-    likes:[
-        {
-           likeBy:{
-            type:moongoes.Types.ObjectId  
-           } 
-        }
-    ],
-    comments:[
-        {
-            comment:{
-                type:String,
-                minlenght:5,
-                maxlenght:300
-            },
-            commentBy:{
-                type:moongoes.Types.ObjectId
-            }
-        }
-    ],
+    likes:[likesSchema],
+    comments:[commentSchema],
+},{
+    timestamps:true,
 })
 
 const Post = moongoes.model('Post',postSchema)

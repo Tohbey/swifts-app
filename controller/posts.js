@@ -7,7 +7,8 @@ const User = require('../models/user');
 const user = require('../middleware/user')
 const authorization = require('../middleware/auth');
 const validateObjectUserId = require('../middleware/validateObjectUserId');
-
+const {Comment} = require('../models/comments')
+const {Likes} = require('../models/likes')
 
 //apis
 //1. get post 
@@ -27,7 +28,7 @@ router.get('/:id',[validateObjectId],async(req,res) => {
     res.send(post);
 })
 
-router.get('/:id/likes/:userId',[validateObjectId,validateObjectUserId,authorization,user],async(req,res) => {
+router.get('/:id/likes/:userId',[validateObjectId,validateObjectUserId],async(req,res) => {
     const userId = req.params.userId
 
     const id = req.params.id
@@ -38,14 +39,20 @@ router.get('/:id/likes/:userId',[validateObjectId,validateObjectUserId,authoriza
     if(!likeByUser) return res.status(400).send('user doesnt exist')
     
     // check if user has liked the post before
-    let likes = post.likes
-    console.log('liked by users',likes)
-    const Likeindex = likes.findIndex(x => String(x._id) === String(userId))
-    console.log('user index in Likes array',Likeindex)
-    likes.splice(Likeindex,1)
-    if(Likeindex >= 0) return res.status(200).send('You have unliked this post before')
-    
-    post.likes.push(userId);
+    // let likes = post.likes
+    // console.log('liked by users',likes)
+    // const Likeindex = likes.findIndex(x => String(x._id) === String(userId))
+    // console.log('user index in Likes array',Likeindex)
+    // if(Likeindex >= 0) return res.status(200).send('You have unliked this post before')
+
+    let like = ({
+        userId:userId,
+        source:'post',
+        sourceId:id,
+        reaction:req.params.reaction
+    })
+    post.likes.push(like);
+
     post.numberOfLikes = post.likes.length;
     post.numberOfComments = post.comments.length;
     console.log('post-detail',post)
@@ -58,13 +65,13 @@ router.get('/:id/likes/:userId',[validateObjectId,validateObjectUserId,authoriza
     console.log('Post index in the users post array',index)
     posts[index].set(post)
     console.log(posts)
-    await User.findByIdAndUpdate(user._id,{posts:posts})
+    // await User.findByIdAndUpdate(user._id,{posts:posts})
     
-    await post.save()
-    res.send(post)
+    // await post.save()
+    // res.send(post)
 })
 
-router.get('/:id/comments/:userId',[validateObjectId,validateObjectUserId,authorization,user],async(req,res) => {
+router.get('/:id/comments/:userId',[validateObjectId,validateObjectUserId],async(req,res) => {
     
     const userId = req.params.userId
 
@@ -76,8 +83,9 @@ router.get('/:id/comments/:userId',[validateObjectId,validateObjectUserId,author
     if(!likeByUser) return res.status(400).send('user doesnt exist')
 
     let comment = ({
-        comment:req.body.comment,
-        commentBy:userId
+        body:req.body.body,
+        postId:id,
+        userId:userId,
     })
     console.log('Updated post ',comment)
 
@@ -93,10 +101,10 @@ router.get('/:id/comments/:userId',[validateObjectId,validateObjectUserId,author
     console.log('Post index in the users post array',index)
     posts[index].set(post)
     console.log(posts)
-    await User.findByIdAndUpdate(user._id,{posts:posts})
+    // await User.findByIdAndUpdate(user._id,{posts:posts})
     
-    await post.save()
-    res.send(post)
+    // await post.save()
+    // res.send(post)
 })
 
 module.exports = router

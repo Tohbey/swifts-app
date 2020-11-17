@@ -75,6 +75,8 @@ const userSchema = new mongoose.Schema({
         }
     ],
     posts:[postSchema]  
+},{
+    timestamps:true,
 });
 
 userSchema.methods.generateAuthToken = function(){

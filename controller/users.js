@@ -92,7 +92,7 @@ router.put('/:id',[validateObjectId,authorization,user],async(req,res) => {
 })
 
 //users/post
-router.get('/post/:id',[validateObjectId,authorization,user],async(req,res) => {
+router.get('/post/:id',[validateObjectId],async(req,res) => {
     const id = req.params.id;
     let user = await User.findById(id);
     if(!user) return res.status(400).send('User doesnt not exist')
@@ -102,7 +102,7 @@ router.get('/post/:id',[validateObjectId,authorization,user],async(req,res) => {
     res.send(posts)
 })
 
-router.post('/post/:id',[validateObjectId,authorization,user],async(req,res) => {
+router.post('/post/:id',[validateObjectId],async(req,res) => {
     const id = req.params.id;    
     let user = await User.findById(id);
     if(!user) return res.status(400).send('User doesnt not exist')
