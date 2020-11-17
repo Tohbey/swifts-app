@@ -92,7 +92,7 @@ router.put('/:id',[validateObjectId,authorization,user],async(req,res) => {
 })
 
 //users/post
-router.get('/post/:id',[validateObjectId],async(req,res) => {
+router.get('/post/:id',[validateObjectId,authorization],async(req,res) => {
     const id = req.params.id;
     let user = await User.findById(id);
     if(!user) return res.status(400).send('User doesnt not exist')
@@ -102,7 +102,7 @@ router.get('/post/:id',[validateObjectId],async(req,res) => {
     res.send(posts)
 })
 
-router.post('/post/:id',[validateObjectId],async(req,res) => {
+router.post('/post/:id',[validateObjectId,authorization,user],async(req,res) => {
     const id = req.params.id;    
     let user = await User.findById(id);
     if(!user) return res.status(400).send('User doesnt not exist')
@@ -148,7 +148,7 @@ router.delete('/post/:id/:userId',[validateObjectId,validateObjectUserId,authori
 
 
 //user/followers
-router.get('/:id/followers',[validateObjectId],async(req,res) => {
+router.get('/:id/followers',[validateObjectId,authorization,user],async(req,res) => {
     const id = req.params.id;
     let user = await User.findById(id);
     if(!user) return res.status(400).send('User doesnt not exist')
@@ -160,7 +160,7 @@ router.get('/:id/followers',[validateObjectId],async(req,res) => {
 })
 
 //user/following
-router.get('/:id/following',[validateObjectId],async(req,res) => {
+router.get('/:id/following',[validateObjectId,authorization,user],async(req,res) => {
     const id = req.params.id;
     let user = await User.findById(id);
     if(!user) return res.status(400).send('User doesnt not exist')
@@ -173,7 +173,7 @@ router.get('/:id/following',[validateObjectId],async(req,res) => {
 
 
 //user/follow
-router.get('/:id/follow/:userId',[validateObjectId,validateObjectUserId],async(req,res) => {
+router.get('/:id/follow/:userId',[validateObjectId,validateObjectUserId,authorization,user],async(req,res) => {
     const id = req.params.id;
     let userFollowing = await User.findById(id);
     if(!userFollowing) return res.status(400).send('User doesnt not exist')

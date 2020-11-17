@@ -28,7 +28,7 @@ router.get('/:id',[validateObjectId],async(req,res) => {
     res.send(post);
 })
 
-router.get('/:id/likes/:userId',[validateObjectId,validateObjectUserId],async(req,res) => {
+router.get('/:id/likes/:userId',[validateObjectId,validateObjectUserId,authorization,user],async(req,res) => {
     const userId = req.params.userId
 
     const id = req.params.id
@@ -74,7 +74,7 @@ router.get('/:id/likes/:userId',[validateObjectId,validateObjectUserId],async(re
     res.send(post)
 })
 
-router.get('/:id/comments/:userId',[validateObjectId,validateObjectUserId],async(req,res) => {
+router.get('/:id/comments/:userId',[validateObjectId,validateObjectUserId,authorization,user],async(req,res) => {
     
     const userId = req.params.userId
 
