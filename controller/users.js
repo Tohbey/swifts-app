@@ -10,27 +10,32 @@ const validateObjectUserId = require('../middleware/validateObjectUserId')
 const user = require('../middleware/user')
 const authorization = require('../middleware/auth')
 const admin = require('../middleware/admin')
+const isDisable = require('../middleware/isDisabled')
+const status = require('../middleware/status')
 
-//api-end Points
-//  1. /users               get,post,delete,put
-//  2. /users/post/:id      post,get
-
-//admin
+//@desc     getting all users
+//router    GET /
 router.get('',async(req,res) => {
     const users = await User.find();
     res.status(200).json(users)
 })
 
-//users
-router.get('/:id',[validateObjectId,authorization,user],async(req,res) => {
+//@desc     getting user by id
+//router    GET /:id
+router.get('/:id',[validateObjectId,user,authorization,status],async(req,res) => {
     const id = req.params.id;
 
     let user = await User.findById(id);
     if(!user) return res.status(400).send('User doesnt not exist')
 
+    let status = user.status;
+    if(status === 'Pending') return res.status(400).send('Verify your email address')
+
     res.send(user);
 })
 
+//@desc     creating user
+//router    POST /
 router.post('',async(req,res) => {
     let user = await User.findOne({email:req.body.email})
     if(user) return res.status(400).send('Email already exist')
@@ -41,7 +46,7 @@ router.post('',async(req,res) => {
     const salt = await bcrypt.genSalt(10)
 
     user = new User(_.pick(req.body,[
-        'surname','othernames','email','password',
+        'firstName','lastName','email','password',
         'address','phoneNumber','bio','username','role'
     ]))
 
@@ -59,29 +64,34 @@ router.post('',async(req,res) => {
     }  
 })
 
-router.delete('/:id',[validateObjectId,authorization,user],async(req,res) => {
+//@desc     disabling user
+//router    GET /disabling/:id
+router.get('/Disabling/:id',[validateObjectId,admin,authorization,status],async(req,res) => {
     const id = req.params.id;
 
     let user = await User.findByIdAndDelete(id);
     if(!user) return res.status(400).send('User doesnt not exist')
 
-    let posts = user.posts
-    await posts.forEach( post => {
-        Post.findByIdAndDelete(post._id)
-    });
+    await user.findByIdAndUpdate(id,{isDisable:true})
 
-    res.status(200).send("User with has been deleted")
+    res.status(200).send("User with has been disabled")
 })
 
-router.put('/:id',[validateObjectId,authorization,user],async(req,res) => {
+//@desc     updating user
+//router    PUT /:id
+router.put('/:id',[validateObjectId,isDisable,status,user],async(req,res) => {
     const id = req.params.id;
     let user = await User.findById(id);
     if(!user) return res.status(400).send('User doesnt not exist')
+
+    const salt = await bcrypt.genSalt(10)
 
     user.set(_.pick(req.body,[
         'surname','othernames','email','password',
         'address','phoneNumber','bio','username'
     ]))
+
+    user.password = await bcrypt.hash(user.password,salt);
 
     try{
         user = await user.save()
@@ -91,8 +101,9 @@ router.put('/:id',[validateObjectId,authorization,user],async(req,res) => {
     }
 })
 
-//users/post
-router.get('/post/:id',[validateObjectId,authorization],async(req,res) => {
+//@desc     getting user's posts
+//router    GET /posts/id
+router.get('/posts/:id',[validateObjectId,isDisable,user,authorization,status,isDisable],async(req,res) => {
     const id = req.params.id;
     let user = await User.findById(id);
     if(!user) return res.status(400).send('User doesnt not exist')
@@ -102,8 +113,11 @@ router.get('/post/:id',[validateObjectId,authorization],async(req,res) => {
     res.send(posts)
 })
 
-router.post('/post/:id',[validateObjectId,authorization,user],async(req,res) => {
-    const id = req.params.id;    
+//@desc     posting a post
+//router    POST /post
+router.post('/posts',[validateObjectId,isDisable,user,isDisable,status,authorization],async(req,res) => {
+    // const id = req.params.id;   
+    const id = req.user._id;   
     let user = await User.findById(id);
     if(!user) return res.status(400).send('User doesnt not exist')
     
@@ -128,15 +142,22 @@ router.post('/post/:id',[validateObjectId,authorization,user],async(req,res) => 
 
 })
 
-router.delete('/post/:id/:userId',[validateObjectId,validateObjectUserId,authorization,user],async(req,res) => {
+
+//@desc     deleting a user's post
+//router    DELET /posts/:id
+router.delete('/posts/:id',[validateObjectId,validateObjectUserId,isDisable,user,authorization],async(req,res) => {
     const postId = req.params.id;
 
-    const userId = req.params.userId;
+    const userId = req.user._id;
     let user = await User.findById(userId);
     if(!user) return res.status(400).send('User doesnt not exist')
 
     let posts = user.posts;
     console.log('Old posts ', posts)
+
+    let index = posts.findIndex(x => String(x._id) === String(postId))
+    if(index < 0) return res.status.send('not user post')
+    
     let newPosts = posts.filter(x => String(x._id) != String(postId))
     console.log('new Posts: ',newPosts)
     
@@ -146,9 +167,9 @@ router.delete('/post/:id/:userId',[validateObjectId,validateObjectUserId,authori
     res.status(200).send(user)
 })
 
-
-//user/followers
-router.get('/:id/followers',[validateObjectId,authorization,user],async(req,res) => {
+//@desc     getting a user's followers
+//router    GET /:id/followers
+router.get('/:id/followers',[validateObjectId,authorization,user,isDisable,status],async(req,res) => {
     const id = req.params.id;
     let user = await User.findById(id);
     if(!user) return res.status(400).send('User doesnt not exist')
@@ -159,8 +180,9 @@ router.get('/:id/followers',[validateObjectId,authorization,user],async(req,res)
     res.status(200).send(followers)
 })
 
-//user/following
-router.get('/:id/following',[validateObjectId,authorization,user],async(req,res) => {
+//@desc     getting a user's followering
+//router    GET /:id/followering
+router.get('/:id/following',[validateObjectId,authorization,user,isDisable,status],async(req,res) => {
     const id = req.params.id;
     let user = await User.findById(id);
     if(!user) return res.status(400).send('User doesnt not exist')
@@ -171,9 +193,9 @@ router.get('/:id/following',[validateObjectId,authorization,user],async(req,res)
     res.status(200).send(following)
 })
 
-
-//user/follow
-router.get('/:id/follow/:userId',[validateObjectId,validateObjectUserId,authorization,user],async(req,res) => {
+//@desc     following a user's
+//router    GET /:id/follow/:userId
+router.get('/:id/follow/:userId',[validateObjectId,validateObjectUserId,authorization,user,isDisable,status],async(req,res) => {
     const id = req.params.id;
     let userFollowing = await User.findById(id);
     if(!userFollowing) return res.status(400).send('User doesnt not exist')
@@ -181,13 +203,16 @@ router.get('/:id/follow/:userId',[validateObjectId,validateObjectUserId,authoriz
     const userId = req.params.userId;
     let userFollower = await User.findById(userId);
     if(!userFollower) return res.status(400).send('User doesnt not exist')
+    let followers = userFollower.followers
 
     let following = userFollowing.following
     let index = following.findIndex((x) => String(x.id) === String(userId))
-    if(index >= 0) return res.status(400).send('you are already following him')
+    if(index >= 0) return res.status(400).send('you are already following this user')
 
-    followers = userFollower.followers
-    followers.push(id)
+    let follower = ({
+        followerId: id
+    })
+    followers.push(follower)
     console.log('Followers - ',followers)
     console.log('user follower', userFollower)
     userfollower = await User.findByIdAndUpdate(userId,{followers:followers})
@@ -200,4 +225,5 @@ router.get('/:id/follow/:userId',[validateObjectId,validateObjectUserId,authoriz
 
     res.status(200).send('You have followed ',userFollowing.username)
 })
+
 module.exports = router

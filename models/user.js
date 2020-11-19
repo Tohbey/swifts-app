@@ -1,18 +1,21 @@
 const mongoose = require('mongoose')
 const {postSchema, Post} = require('./post');
-const jwt = require('jsonwebtoken')
+const jwt = require('jsonwebtoken');
+const { commentSchema } = require('./comments');
+const objectId = mongoose.Types.ObjectId
+
 require('dotenv').config();
 
 const jwtSecret = process.env.JWT_SECRET
 
 const userSchema = new mongoose.Schema({
-    surname:{
+    firstName:{
         type: String,
         required: true,
         minlength: 5,
         maxlength: 50
     },
-    othernames:{
+    lastName:{
         type: String,
         required: true,
         minlength: 5,
@@ -58,30 +61,38 @@ const userSchema = new mongoose.Schema({
     role:{
         type:String,
         enum:['Admin','User'],
-        required:true
+        required:true,
+        default:'User'
     },
-    followers:[
-        {
-            followerId:{
-                type:mongoose.Types.ObjectId
-            }
+    status:{
+        type:String,
+        enum:['Pending','Verified'],
+        default:'Pending'
+    },
+    isDisable:{
+        type:Boolean,
+        default:false,
+    },
+    posts:[postSchema],
+    comments:[commentSchema],
+    followers:[{
+        followerId:{
+            type:objectId
         }
-    ],
-    following:[
-        {
-            followingId:{
-                type:mongoose.Types.ObjectId
-            }
+    }],
+    following:[{
+        followingId:{
+            type:objectId
         }
-    ],
-    posts:[postSchema]  
+    }]  
 },{
     timestamps:true,
 });
 
 userSchema.methods.generateAuthToken = function(){
     const token = jwt.sign(
-            {_id:this._id,email:this.email,role:this.role},
+            {_id:this._id,email:this.email,role:this.role,
+                status:this.status,isDisable:this.isDisable},
             jwtSecret
         )
     return token;
