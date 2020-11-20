@@ -5,6 +5,7 @@ const User = require('../models/user')
 const _ = require('lodash');
 const winston = require('winston');
 const { Post } = require('../models/post');
+const Token = require('../models/token')
 const validateObjectId = require('../middleware/validateObjectId')
 const validateObjectUserId = require('../middleware/validateObjectUserId')
 const user = require('../middleware/user')
@@ -12,6 +13,13 @@ const authorization = require('../middleware/auth')
 const admin = require('../middleware/admin')
 const isDisable = require('../middleware/isDisabled')
 const status = require('../middleware/status')
+const crypto = require('crypto')
+const nodemailer = require('nodemailer')
+
+const dotenv = require('dotenv').config();
+
+const email  = process.env.email
+const password = process.env.password
 
 //@desc     getting all users
 //router    GET /
@@ -52,12 +60,42 @@ router.post('',async(req,res) => {
 
     user.password = await bcrypt.hash(user.password,salt);
 
+    //generating user token
+    let token = new Token({_userId:user._id,token:crypto.randomBytes(16).toString('hex')})
+    console.log(token)
+
+    //configuring email send
+    let transporter = nodemailer.createTransport({
+        service:'gmail',
+        auth:{
+            user:email,
+            pass:password
+        }
+    });
+
+    //configuring the email message
+    let mailOptions = {
+        from:'The Swift App',
+        to: user.email,
+        subject:'User verification',
+        text:'Your verification code '+token.token
+    };
+
     try{
         user = await user.save()
         winston.info('User saved')
-        
+
+        //sending the message after saving the user
+        await transporter.sendMail(mailOptions, (err, info) => {
+            if(err){
+                console.log(err);
+            }else{
+                console.log('Email Sent '+info.response)
+            }
+        })
+            
         const token = user.generateAuthToken()
-        res.header('x-auth-token',token).send(_.pick(user,['username','email']))
+        res.header('x-auth-token',token).send(_.pick(user,['username','email']),'Verification email has been sent')
     }catch(err){
         res.status(400).send(err.errors)
         console.log("Saving users in users.js "+err.errors)

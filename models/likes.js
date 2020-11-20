@@ -1,7 +1,7 @@
-const moongoes = require('mongoose')
-const objectId = moongoes.Types.ObjectId;
+const mongoose = require('mongoose')
+const objectId = mongoose.Types.ObjectId;
 
-const likesSchema = moongoes.Schema({
+const likesSchema = mongoose.Schema({
     userId:{
         type:objectId,
         required:true,
@@ -26,7 +26,7 @@ const likesSchema = moongoes.Schema({
     timestamps:true,
 })
 
-const Likes = moongoes.model('Likes',likesSchema)
+const Likes = mongoose.model('Likes',likesSchema)
 
 exports.Likes = Likes;
 exports.likesSchema = likesSchema;

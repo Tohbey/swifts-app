@@ -3,7 +3,7 @@ const router = express.Router()
 const User =  require('../models/user')
 const bcrypt = require('bcrypt')
 const _ = require('lodash');
-
+const status = require('../middleware/status')
 
 router.post('/',async(req,res) => {
     const {email,password} = req.body

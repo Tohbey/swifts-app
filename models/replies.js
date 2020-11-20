@@ -1,8 +1,8 @@
-const moongoes = require('mongoose')
-const objectId = moongoes.Types.ObjectId;
+const mongoose = require('mongoose')
+const objectId = mongoose.Types.ObjectId;
 const {likesSchema} = require('./likes')
 
-const repliesSchema = new moongoes.Schema({
+const repliesSchema = new mongoose.Schema({
     userId:{
         type:objectId,
         required:true,
@@ -45,7 +45,7 @@ const repliesSchema = new moongoes.Schema({
     timestamps: true,
 })
 
-const Reply = moongoes.model('Reply',repliesSchema)
+const Reply = mongoose.model('Reply',repliesSchema)
 
 exports.Reply = Reply;
 exports.repliesSchema = repliesSchema;
