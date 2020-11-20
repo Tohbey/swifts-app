@@ -84,8 +84,8 @@ router.post('/:id/comments',[validateObjectId,authorization,user,isDisable,statu
     if(!post) return res.status(400).send('Post doesnt exist')
 
     const userId = req.user._id
-    let likeByUser = User.findById(userId)
-    if(!likeByUser) return res.status(400).send('user doesnt exist')
+    let commentBy = User.findById(userId)
+    if(!commentBy) return res.status(400).send('user doesnt exist')
 
     let comment = new Comment({
         body:req.body.body,
