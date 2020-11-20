@@ -15,15 +15,17 @@ const authorization = require('../middleware/auth')
 
 //@desc     getting token sent to user for verification
 //router    POST /
-router.post('/',[authorization],async(req,res) => {
+router.post('',[authorization],async(req,res) => {
     let token = req.body.token
 
     let retrivedToken = await Token.findOne({token:token})
+
     if(!retrivedToken) return res.status(400).send({
         msg:'Your verification link may have expored. Please click on resend to verify your email '+url('/verify/resendCode')
     })
 
-    let user = User.findByIdAndUpdate(retrivedToken._userId,{status:'Verified'})
+    let user = await User.findByIdAndUpdate(retrivedToken._userId,{status:'Verified'})
+
     if(!user) return res.status(400).send({
         msg:'We were unable to find a user for this verification. Please SignUp!'
     })

@@ -61,8 +61,8 @@ router.post('',async(req,res) => {
     user.password = await bcrypt.hash(user.password,salt);
 
     //generating user token
-    let token = new Token({_userId:user._id,token:crypto.randomBytes(16).toString('hex')})
-    console.log(token)
+    let tokenUser = new Token({_userId:user._id,token:crypto.randomBytes(16).toString('hex')})
+    console.log(tokenUser)
 
     //configuring email send
     let transporter = nodemailer.createTransport({
@@ -78,24 +78,24 @@ router.post('',async(req,res) => {
         from:'The Swift App',
         to: user.email,
         subject:'User verification',
-        text:'Your verification code '+token.token
+        text:'Your verification code '+tokenUser.token
     };
 
+    //sending the message after saving the user
+    
     try{
         user = await user.save()
         winston.info('User saved')
+        
+        await tokenUser.save()
+        await transporter.sendMail(mailOptions)
 
-        //sending the message after saving the user
-        await transporter.sendMail(mailOptions, (err, info) => {
-            if(err){
-                console.log(err);
-            }else{
-                console.log('Email Sent '+info.response)
-            }
-        })
-            
         const token = user.generateAuthToken()
-        res.header('x-auth-token',token).send(_.pick(user,['username','email']),'Verification email has been sent')
+        res.header('x-auth-token',token).send({
+            email:user.email,
+            username:user.username,
+            msg:'verification email has been sent to your email'
+        })
     }catch(err){
         res.status(400).send(err.errors)
         console.log("Saving users in users.js "+err.errors)
