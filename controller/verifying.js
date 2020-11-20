@@ -10,11 +10,12 @@ const dotenv = require('dotenv').config();
 
 const email  = process.env.email
 const password = process.env.password
+const authorization = require('../middleware/auth')
 
 
 //@desc     getting token sent to user for verification
 //router    POST /
-router.post('/',async(req,res) => {
+router.post('/',[authorization],async(req,res) => {
     let token = req.body.token
 
     let retrivedToken = await Token.findOne({token:token})
