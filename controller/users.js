@@ -30,7 +30,7 @@ router.get('',async(req,res) => {
 
 //@desc     getting user by id
 //router    GET /:id
-router.get('/:id',[validateObjectId,user,authorization,status],async(req,res) => {
+router.get('/:id',[validateObjectId,authorization,user,status],async(req,res) => {
     const id = req.params.id;
 
     let user = await User.findById(id);
@@ -70,7 +70,8 @@ router.post('',async(req,res) => {
         auth:{
             user:email,
             pass:password
-        }
+        },
+        maxConnections:5,
     });
 
     //configuring the email message
@@ -91,20 +92,21 @@ router.post('',async(req,res) => {
         await transporter.sendMail(mailOptions)
 
         const token = user.generateAuthToken()
+
         res.header('x-auth-token',token).send({
             email:user.email,
             username:user.username,
             msg:'verification email has been sent to your email'
         })
     }catch(err){
-        res.status(400).send(err.errors)
-        console.log("Saving users in users.js "+err.errors)
+        res.status(400).send(err)
+        console.log("Saving users in users.js "+err)
     }  
 })
 
 //@desc     disabling user
 //router    GET /disabling/:id
-router.get('/Disabling/:id',[validateObjectId,admin,authorization,status],async(req,res) => {
+router.get('/Disabling/:id',[validateObjectId,authorization,admin,status],async(req,res) => {
     const id = req.params.id;
 
     let user = await User.findByIdAndDelete(id);
@@ -117,7 +119,7 @@ router.get('/Disabling/:id',[validateObjectId,admin,authorization,status],async(
 
 //@desc     updating user
 //router    PUT /:id
-router.put('/:id',[validateObjectId,isDisable,status,user],async(req,res) => {
+router.put('/:id',[validateObjectId,authorization,isDisable,status,user],async(req,res) => {
     const id = req.params.id;
     let user = await User.findById(id);
     if(!user) return res.status(400).send('User doesnt not exist')
@@ -141,7 +143,7 @@ router.put('/:id',[validateObjectId,isDisable,status,user],async(req,res) => {
 
 //@desc     getting user's posts
 //router    GET /posts/id
-router.get('/posts/:id',[validateObjectId,isDisable,user,authorization,status,isDisable],async(req,res) => {
+router.get('/posts/:id',[validateObjectId,authorization,status,isDisable,user],async(req,res) => {
     const id = req.params.id;
     let user = await User.findById(id);
     if(!user) return res.status(400).send('User doesnt not exist')
@@ -153,14 +155,16 @@ router.get('/posts/:id',[validateObjectId,isDisable,user,authorization,status,is
 
 //@desc     posting a post
 //router    POST /post
-router.post('/posts',[validateObjectId,isDisable,user,isDisable,status,authorization],async(req,res) => {
+router.post('/posts',[authorization,isDisable,user,isDisable,status,authorization],async(req,res) => {
     // const id = req.params.id;   
     const id = req.user._id;   
     let user = await User.findById(id);
     if(!user) return res.status(400).send('User doesnt not exist')
     
     let post = new Post({
-        message: req.body.message
+        title: req.body.title,
+        message: req.body.message,
+        tags: req.body.tags
     })
 
     post.userId = user._id;
@@ -183,7 +187,7 @@ router.post('/posts',[validateObjectId,isDisable,user,isDisable,status,authoriza
 
 //@desc     deleting a user's post
 //router    DELET /posts/:id
-router.delete('/posts/:id',[validateObjectId,validateObjectUserId,isDisable,user,authorization],async(req,res) => {
+router.delete('/posts/:id',[validateObjectId,validateObjectUserId,authorization,isDisable,user,authorization],async(req,res) => {
     const postId = req.params.id;
 
     const userId = req.user._id;

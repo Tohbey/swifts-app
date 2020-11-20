@@ -29,7 +29,9 @@ router.post('',[authorization],async(req,res) => {
     if(!user) return res.status(400).send({
         msg:'We were unable to find a user for this verification. Please SignUp!'
     })
-    res.send(_.pick(user,['username','email','status']))    
+
+    const loginToken = user.generateAuthToken();
+    res.header('x-auth-token', loginToken).send(_.pick(user, ['_id', 'email','status']));
 })
 
 router.post('/resendCode',async(req,res) => {
