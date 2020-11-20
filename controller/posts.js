@@ -32,7 +32,7 @@ router.get('/:id',[validateObjectId],async(req,res) => {
 
 //@desc     posting likes post
 //router    POST /:id/likes
-router.post('/:id/likes',[validateObjectId,validateObjectUserId,authorization,user,isDisable,status],async(req,res) => {
+router.post('/:id/likes',[validateObjectId,authorization,user,isDisable,status],async(req,res) => {
     const userId = req.user._id
 
     const id = req.params.id
@@ -78,7 +78,7 @@ router.post('/:id/likes',[validateObjectId,validateObjectUserId,authorization,us
 
 //@desc     posting comment on post
 //router    POST /:id/comments
-router.post('/:id/comments',[validateObjectId,validateObjectUserId,authorization,user,isDisable,status],async(req,res) => {
+router.post('/:id/comments',[validateObjectId,authorization,user,isDisable,status],async(req,res) => {
     const id = req.params.id
     let post = await Post.findById(id);
     if(!post) return res.status(400).send('Post doesnt exist')
@@ -175,7 +175,7 @@ router.get('/:id/likes',[validateObjectId], async(req,res) => {
     let post = await Post.findById(id);
     if(!post) return res.status(400).send('Post doesnt exist')
 
-    let likes = post.comments;
+    let likes = post.likes;
     
     res.send({likes,numberOfLikes:likes.length})
 })
