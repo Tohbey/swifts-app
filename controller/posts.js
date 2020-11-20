@@ -103,11 +103,17 @@ router.post('/:id/comments',[validateObjectId,authorization,user,isDisable,statu
 
     let user = await User.findById(post.userId);
     let posts = user.posts
+
+    //saved comment to user
+    let userComments = user.comments
+    userComments.push(comment)
+
     const index = posts.findIndex(x => String(x._id) === String(post._id))
     console.log('Post index in the users post array',index)
     posts[index].comments.push(comment)
-    console.log(posts)
-    await User.findByIdAndUpdate(user._id,{posts:posts})
+    console.log('users - ',posts)
+    
+    await User.findByIdAndUpdate(user._id,{posts:posts,comments:userComments})
     
     await post.save()
     res.send(post)
